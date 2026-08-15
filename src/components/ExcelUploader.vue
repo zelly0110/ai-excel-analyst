@@ -34,8 +34,10 @@
           <el-icon :size="28" color="#10b981"><DocumentChecked /></el-icon>
         </div>
         <div class="file-meta">
-          <span class="file-name">2026_Q3_Sales_Report_Demo.xlsx</span>
-          <span class="file-detail">已读取 10 条有效记录 · 10 列维度数据 · 状态: 正常解析</span>
+          <span class="file-name">{{ fileMeta?.fileName || '2026_Q3_Sales_Report_Demo.xlsx' }}</span>
+          <span class="file-detail">
+            已读取 {{ fileMeta?.rowCount ?? 10 }} 条有效记录 · {{ fileMeta?.columnCount ?? 10 }} 列维度数据 · 工作表: {{ fileMeta?.sheetName || 'Sheet1' }} · 状态: 正常解析
+          </span>
         </div>
       </div>
       <el-tag type="success" size="large" effect="dark" round>已成功加载分析源</el-tag>
@@ -48,6 +50,7 @@
       drag
       action="#"
       :auto-upload="false"
+      :show-file-list="false"
       :on-change="handleFileChange"
       accept=".xlsx, .xls, .csv"
     >
@@ -66,12 +69,13 @@
 
 <script setup lang="ts">
 import { UploadFilled, DocumentChecked } from '@element-plus/icons-vue'
-import { ElMessage } from 'element-plus'
 import type { UploadFile } from 'element-plus'
+import type { ExcelFileMeta } from '../types/excel'
 
 defineProps<{
   isDataLoaded: boolean
   loading?: boolean
+  fileMeta?: ExcelFileMeta | null
 }>()
 
 const emit = defineEmits<{
@@ -82,7 +86,6 @@ const emit = defineEmits<{
 
 const handleFileChange = (uploadFile: UploadFile) => {
   if (uploadFile.raw) {
-    ElMessage.success(`已选择文件: ${uploadFile.name}，正在生成 Mock 演示数据...`)
     emit('file-selected', uploadFile.raw)
   }
 }

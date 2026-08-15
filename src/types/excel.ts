@@ -11,6 +11,26 @@ export interface ExcelRow {
   status: '已交付' | '进行中' | '退款'
 }
 
+export type DynamicExcelRow = Record<string, any>
+
+export interface ExcelFileMeta {
+  fileName: string
+  sheetName: string
+  rowCount: number
+  columnCount: number
+  fileSize?: number
+}
+
+export interface ParsedExcelResult {
+  fileName: string
+  sheetName: string
+  sheetNames: string[]
+  columns: string[]
+  data: Record<string, any>[]
+  rowCount: number
+  columnCount: number
+}
+
 export interface MetricCard {
   title: string
   value: string

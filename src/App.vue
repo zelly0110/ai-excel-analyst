@@ -11,7 +11,8 @@
         <section class="section-block">
           <ExcelUploader
             :is-data-loaded="isDataLoaded"
-            :loading="isLoadingDemo"
+            :loading="isLoading"
+            :file-meta="fileMeta"
             @load-demo="handleLoadDemo"
             @reset="handleReset"
             @file-selected="handleFileSelected"
@@ -39,7 +40,7 @@
         <template v-else>
           <!-- Step 2: Excel Data Preview Table -->
           <section class="section-block">
-            <DataPreviewTable :data="excelData" />
+            <DataPreviewTable :data="excelData" :columns="parsedColumns" />
           </section>
 
           <!-- Step 2.5: Sales Trend & Region Distribution ECharts -->
@@ -87,40 +88,78 @@ import {
   MOCK_QUICK_PROMPTS
 } from './mocks/mockData'
 
-import type { ExcelRow, MetricCard, AiInsight, QuickPrompt } from './types/excel'
+import type { DynamicExcelRow, MetricCard, AiInsight, QuickPrompt, ExcelFileMeta } from './types/excel'
+import { parseExcelFile } from './utils/excelParser'
 
 const isDataLoaded = ref(false)
-const isLoadingDemo = ref(false)
+const isLoading = ref(false)
 
-const excelData = ref<ExcelRow[]>([])
+const excelData = ref<DynamicExcelRow[]>([])
+const parsedColumns = ref<string[]>([])
+const fileMeta = ref<ExcelFileMeta | null>(null)
+
 const metrics = ref<MetricCard[]>([])
 const insights = ref<AiInsight[]>([])
 const quickPrompts = ref<QuickPrompt[]>([])
 
 const handleLoadDemo = () => {
-  isLoadingDemo.value = true
+  isLoading.value = true
   setTimeout(() => {
     excelData.value = MOCK_EXCEL_DATA
+    parsedColumns.value = ['id', 'date', 'region', 'product', 'category', 'sales', 'units', 'profitMargin', 'salesRep', 'status']
+    fileMeta.value = {
+      fileName: '2026_Q3_Sales_Report_Demo.xlsx',
+      sheetName: 'Sheet1',
+      rowCount: MOCK_EXCEL_DATA.length,
+      columnCount: 10
+    }
     metrics.value = MOCK_METRICS
     insights.value = MOCK_AI_INSIGHTS
     quickPrompts.value = MOCK_QUICK_PROMPTS
     
     isDataLoaded.value = true
-    isLoadingDemo.value = false
+    isLoading.value = false
     ElMessage.success('成功载入示例 Excel 销售数据！AI 已完成全自动洞察分析。')
-  }, 600)
+  }, 400)
 }
 
 const handleReset = () => {
   isDataLoaded.value = false
   excelData.value = []
+  parsedColumns.value = []
+  fileMeta.value = null
   metrics.value = []
   insights.value = []
+  quickPrompts.value = []
   ElMessage.info('数据已重置')
 }
 
-const handleFileSelected = (_file: File) => {
-  handleLoadDemo()
+const handleFileSelected = async (file: File) => {
+  isLoading.value = true
+  try {
+    const result = await parseExcelFile(file)
+    excelData.value = result.data
+    parsedColumns.value = result.columns
+    fileMeta.value = {
+      fileName: result.fileName,
+      sheetName: result.sheetName,
+      rowCount: result.rowCount,
+      columnCount: result.columnCount,
+      fileSize: file.size
+    }
+
+    // 保留图表和 AI 分析相关 Mock 逻辑
+    metrics.value = MOCK_METRICS
+    insights.value = MOCK_AI_INSIGHTS
+    quickPrompts.value = MOCK_QUICK_PROMPTS
+
+    isDataLoaded.value = true
+    ElMessage.success(`成功解析「${file.name}」(${result.sheetName})，读取到 ${result.rowCount} 行数据！`)
+  } catch (error: any) {
+    ElMessage.error(`Excel 文件解析失败: ${error?.message || '未知错误'}`)
+  } finally {
+    isLoading.value = false
+  }
 }
 </script>
 
