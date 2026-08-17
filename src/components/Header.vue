@@ -16,7 +16,7 @@
 
       <div class="header-actions">
         <el-tag v-if="isDataLoaded" type="success" effect="plain" round class="status-tag">
-          <el-icon><Check /></el-icon> 已就绪 (10 条示例记录)
+          <el-icon><Check /></el-icon> 已就绪（{{ rowCount }} 条{{ isDemo ? '示例' : '' }}记录）
         </el-tag>
         <el-tag v-else type="info" effect="plain" round class="status-tag">
           <el-icon><InfoFilled /></el-icon> 尚未导入数据
@@ -30,9 +30,16 @@
 <script setup lang="ts">
 import { DataLine, Check, InfoFilled } from '@element-plus/icons-vue'
 
-defineProps<{
+interface Props {
   isDataLoaded: boolean
-}>()
+  rowCount?: number
+  isDemo?: boolean
+}
+
+withDefaults(defineProps<Props>(), {
+  rowCount: 0,
+  isDemo: false
+})
 </script>
 
 <style scoped>

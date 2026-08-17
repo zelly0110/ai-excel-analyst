@@ -1,7 +1,11 @@
 <template>
   <div class="app-wrapper">
     <!-- Top Header -->
-    <Header :is-data-loaded="isDataLoaded" />
+    <Header
+      :is-data-loaded="isDataLoaded"
+      :row-count="excelData.length"
+      :is-demo="isDemo"
+    />
 
     <!-- Main Content Area -->
     <main class="main-content">
@@ -93,6 +97,7 @@ import { parseExcelFile } from './utils/excelParser'
 
 const isDataLoaded = ref(false)
 const isLoading = ref(false)
+const isDemo = ref(false)
 
 const excelData = ref<DynamicExcelRow[]>([])
 const parsedColumns = ref<string[]>([])
@@ -105,6 +110,7 @@ const quickPrompts = ref<QuickPrompt[]>([])
 const handleLoadDemo = () => {
   isLoading.value = true
   setTimeout(() => {
+    isDemo.value = true
     excelData.value = MOCK_EXCEL_DATA
     parsedColumns.value = ['id', 'date', 'region', 'product', 'category', 'sales', 'units', 'profitMargin', 'salesRep', 'status']
     fileMeta.value = {
@@ -125,6 +131,7 @@ const handleLoadDemo = () => {
 
 const handleReset = () => {
   isDataLoaded.value = false
+  isDemo.value = false
   excelData.value = []
   parsedColumns.value = []
   fileMeta.value = null
@@ -138,6 +145,7 @@ const handleFileSelected = async (file: File) => {
   isLoading.value = true
   try {
     const result = await parseExcelFile(file)
+    isDemo.value = false
     excelData.value = result.data
     parsedColumns.value = result.columns
     fileMeta.value = {
