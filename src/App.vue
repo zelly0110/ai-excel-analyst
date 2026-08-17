@@ -49,7 +49,11 @@
 
           <!-- Step 2.5: Sales Trend & Region Distribution ECharts -->
           <section class="section-block">
-            <SalesTrendChart />
+            <SalesTrendChart
+              :trend-data="trendData"
+              :region-data="regionData"
+              :date-range-text="trendData.dateRangeText"
+            />
           </section>
 
           <!-- Step 3: AI Insights & Stat Cards -->
@@ -74,7 +78,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { DataAnalysis, Check } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
@@ -94,6 +98,7 @@ import {
 
 import type { DynamicExcelRow, MetricCard, AiInsight, QuickPrompt, ExcelFileMeta } from './types/excel'
 import { parseExcelFile } from './utils/excelParser'
+import { analyzeSalesTrend, analyzeRegionShare } from './utils/dataAnalyzer'
 
 const isDataLoaded = ref(false)
 const isLoading = ref(false)
@@ -102,6 +107,10 @@ const isDemo = ref(false)
 const excelData = ref<DynamicExcelRow[]>([])
 const parsedColumns = ref<string[]>([])
 const fileMeta = ref<ExcelFileMeta | null>(null)
+
+// Dynamically compute chart data based on loaded excelData
+const trendData = computed(() => analyzeSalesTrend(excelData.value))
+const regionData = computed(() => analyzeRegionShare(excelData.value))
 
 const metrics = ref<MetricCard[]>([])
 const insights = ref<AiInsight[]>([])

@@ -18,7 +18,7 @@
     <div class="charts-grid">
       <!-- Main Line / Bar Trend Chart -->
       <div class="chart-box" :class="{ 'full-width': activeView === 'trend' }">
-        <div class="box-title">日销售额与订单量走势 (8月1日 - 8月10日)</div>
+        <div class="box-title">{{ chartTitle }}</div>
         <div ref="lineChartRef" class="echarts-dom"></div>
       </div>
 
@@ -32,16 +32,35 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, shallowRef, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, shallowRef, watch } from 'vue'
 import { TrendCharts } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
-import { MOCK_TREND_DATA, MOCK_REGION_DATA } from '../mocks/mockData'
+import type { TrendChartData, RegionShareData } from '../types/excel'
+
+const props = withDefaults(
+  defineProps<{
+    trendData?: TrendChartData
+    regionData?: RegionShareData[]
+    dateRangeText?: string
+  }>(),
+  {
+    trendData: () => ({ dates: [], sales: [], orders: [], dateRangeText: '' }),
+    regionData: () => [],
+    dateRangeText: ''
+  }
+)
 
 const activeView = ref<'trend' | 'region'>('trend')
 const isDesktop = ref(true)
 
 const lineChartRef = ref<HTMLDivElement | null>(null)
 const pieChartRef = ref<HTMLDivElement | null>(null)
+
+// Computed title reflecting dynamic date range
+const chartTitle = computed(() => {
+  const range = props.dateRangeText || props.trendData?.dateRangeText
+  return range ? `日销售额与订单量走势 (${range})` : '日销售额与订单量走势'
+})
 
 // Use shallowRef for ECharts instances to prevent Vue reactivity proxies from interfering with ECharts internals
 const lineChartInstance = shallowRef<echarts.ECharts | null>(null)
@@ -53,6 +72,10 @@ const initLineChart = () => {
   if (!lineChartInstance.value) {
     lineChartInstance.value = echarts.init(lineChartRef.value)
   }
+
+  const dates = props.trendData?.dates || []
+  const sales = props.trendData?.sales || []
+  const orders = props.trendData?.orders || []
 
   const option: echarts.EChartsOption = {
     tooltip: {
@@ -73,10 +96,14 @@ const initLineChart = () => {
     xAxis: [
       {
         type: 'category',
-        data: MOCK_TREND_DATA.dates,
+        data: dates,
         axisPointer: { type: 'shadow' },
         axisLine: { lineStyle: { color: '#cbd5e1' } },
-        axisLabel: { color: '#64748b' }
+        axisLabel: {
+          color: '#64748b',
+          interval: dates.length > 15 ? 'auto' : 0,
+          rotate: dates.length > 10 ? 30 : 0
+        }
       }
     ],
     yAxis: [
@@ -85,7 +112,7 @@ const initLineChart = () => {
         name: '销售额 (元)',
         axisLabel: {
           color: '#64748b',
-          formatter: (value: number) => `¥${(value / 10000).toFixed(1)}万`
+          formatter: (value: number) => (value >= 10000 ? `¥${(value / 10000).toFixed(1)}万` : `¥${value.toLocaleString()}`)
         },
         splitLine: { lineStyle: { type: 'dashed', color: '#f1f5f9' } }
       },
@@ -113,7 +140,7 @@ const initLineChart = () => {
             { offset: 1, color: 'rgba(37, 99, 235, 0.02)' }
           ])
         },
-        data: MOCK_TREND_DATA.sales
+        data: sales
       },
       {
         name: '订单量 (件)',
@@ -124,12 +151,12 @@ const initLineChart = () => {
           color: '#10b981',
           borderRadius: [4, 4, 0, 0]
         },
-        data: MOCK_TREND_DATA.orders
+        data: orders
       }
     ]
   }
 
-  lineChartInstance.value.setOption(option)
+  lineChartInstance.value.setOption(option, true)
 }
 
 const initPieChart = () => {
@@ -138,6 +165,8 @@ const initPieChart = () => {
   if (!pieChartInstance.value) {
     pieChartInstance.value = echarts.init(pieChartRef.value)
   }
+
+  const regionData = props.regionData || []
 
   const option: echarts.EChartsOption = {
     tooltip: {
@@ -148,7 +177,8 @@ const initPieChart = () => {
       orient: 'horizontal',
       bottom: 0,
       itemWidth: 10,
-      itemHeight: 10
+      itemHeight: 10,
+      type: 'scroll'
     },
     series: [
       {
@@ -167,13 +197,13 @@ const initPieChart = () => {
           color: '#475569',
           fontSize: 12
         },
-        color: ['#2563eb', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899'],
-        data: MOCK_REGION_DATA
+        color: ['#2563eb', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'],
+        data: regionData
       }
     ]
   }
 
-  pieChartInstance.value.setOption(option)
+  pieChartInstance.value.setOption(option, true)
 }
 
 const handleResize = () => {
@@ -190,6 +220,22 @@ const handleViewChange = () => {
 watch(activeView, () => {
   handleViewChange()
 })
+
+watch(
+  () => props.trendData,
+  () => {
+    initLineChart()
+  },
+  { deep: true }
+)
+
+watch(
+  () => props.regionData,
+  () => {
+    initPieChart()
+  },
+  { deep: true }
+)
 
 onMounted(() => {
   initLineChart()

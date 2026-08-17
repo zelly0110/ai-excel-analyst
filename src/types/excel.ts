@@ -66,6 +66,7 @@ export interface TrendChartData {
   dates: string[]
   sales: number[]
   orders: number[]
+  dateRangeText?: string
 }
 
 export interface RegionShareData {
