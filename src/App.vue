@@ -63,7 +63,11 @@
 
           <!-- Step 4: Natural Language AI Copilot Chat -->
           <section class="section-block">
-            <ChatInput :quick-prompts="quickPrompts" />
+            <ChatInput
+              :analysis-context="analysisContext"
+              :raw-data="excelData"
+              :quick-prompts="quickPrompts"
+            />
           </section>
         </template>
 
@@ -91,14 +95,18 @@ import ChatInput from './components/ChatInput.vue'
 
 import {
   MOCK_EXCEL_DATA,
-  MOCK_METRICS,
-  MOCK_AI_INSIGHTS,
   MOCK_QUICK_PROMPTS
 } from './mocks/mockData'
 
-import type { DynamicExcelRow, MetricCard, AiInsight, QuickPrompt, ExcelFileMeta } from './types/excel'
+import type { DynamicExcelRow, QuickPrompt, ExcelFileMeta } from './types/excel'
 import { parseExcelFile } from './utils/excelParser'
-import { analyzeSalesTrend, analyzeRegionShare } from './utils/dataAnalyzer'
+import {
+  analyzeSalesTrend,
+  analyzeRegionShare,
+  buildDatasetAnalysisContext,
+  generateMetricCardsFromContext,
+  generateInsightsFromContext
+} from './utils/dataAnalyzer'
 
 const isDataLoaded = ref(false)
 const isLoading = ref(false)
@@ -112,8 +120,11 @@ const fileMeta = ref<ExcelFileMeta | null>(null)
 const trendData = computed(() => analyzeSalesTrend(excelData.value))
 const regionData = computed(() => analyzeRegionShare(excelData.value))
 
-const metrics = ref<MetricCard[]>([])
-const insights = ref<AiInsight[]>([])
+// Dynamically compute statistical analysis context, KPI metric cards, and factual insights
+const analysisContext = computed(() => buildDatasetAnalysisContext(excelData.value))
+const metrics = computed(() => generateMetricCardsFromContext(analysisContext.value))
+const insights = computed(() => generateInsightsFromContext(analysisContext.value))
+
 const quickPrompts = ref<QuickPrompt[]>([])
 
 const handleLoadDemo = () => {
@@ -128,13 +139,11 @@ const handleLoadDemo = () => {
       rowCount: MOCK_EXCEL_DATA.length,
       columnCount: 10
     }
-    metrics.value = MOCK_METRICS
-    insights.value = MOCK_AI_INSIGHTS
     quickPrompts.value = MOCK_QUICK_PROMPTS
     
     isDataLoaded.value = true
     isLoading.value = false
-    ElMessage.success('成功载入示例 Excel 销售数据！AI 已完成全自动洞察分析。')
+    ElMessage.success('成功载入示例 Excel 销售数据！统计引擎已完成全自动聚合分析。')
   }, 400)
 }
 
@@ -144,8 +153,6 @@ const handleReset = () => {
   excelData.value = []
   parsedColumns.value = []
   fileMeta.value = null
-  metrics.value = []
-  insights.value = []
   quickPrompts.value = []
   ElMessage.info('数据已重置')
 }
@@ -165,13 +172,10 @@ const handleFileSelected = async (file: File) => {
       fileSize: file.size
     }
 
-    // 保留图表和 AI 分析相关 Mock 逻辑
-    metrics.value = MOCK_METRICS
-    insights.value = MOCK_AI_INSIGHTS
     quickPrompts.value = MOCK_QUICK_PROMPTS
 
     isDataLoaded.value = true
-    ElMessage.success(`成功解析「${file.name}」(${result.sheetName})，读取到 ${result.rowCount} 行数据！`)
+    ElMessage.success(`成功解析「${file.name}」(${result.sheetName})，读取到 ${result.rowCount} 行数据并生成分析报告！`)
   } catch (error: any) {
     ElMessage.error(`Excel 文件解析失败: ${error?.message || '未知错误'}`)
   } finally {

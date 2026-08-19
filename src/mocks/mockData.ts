@@ -80,10 +80,10 @@ export const MOCK_AI_INSIGHTS: AiInsight[] = [
 ]
 
 export const MOCK_QUICK_PROMPTS: QuickPrompt[] = [
-  { id: 1, icon: 'DataAnalysis', label: '分析各区域销售额占比', query: '请详细分析华东、华北、华南等各区域的销售额占比与贡献度。' },
-  { id: 2, icon: 'TrendCharts', label: '找出利润率最高的产品', query: '本数据集中哪个产品分类的毛利率最高？原因是什么？' },
-  { id: 3, icon: 'Warning', label: '诊断潜在退款异常风险', query: '帮我查找退款或异常订单集中在哪几个销售代表和地区。' },
-  { id: 4, icon: 'PieChart', label: '预测下个季度销售策略', query: '根据当前销售数据，下季度应该重点推哪个产品线？' }
+  { id: 1, icon: 'DataAnalysis', label: '哪个地区销售额最高？', query: '哪个地区销售额最高？' },
+  { id: 2, icon: 'User', label: '谁卖得最好？', query: '谁卖得最好？哪个销售员销售额最高？' },
+  { id: 3, icon: 'TrendCharts', label: '哪个产品销售额最高？', query: '哪个产品销售额最高？' },
+  { id: 4, icon: 'Warning', label: '最大一笔订单是多少？', query: '最大的一笔订单是多少？哪一笔订单金额最高？' }
 ]
 
 export const MOCK_TREND_DATA = {

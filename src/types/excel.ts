@@ -74,3 +74,55 @@ export interface RegionShareData {
   value: number
 }
 
+export interface DimensionRanking {
+  name: string
+  totalSales: number
+  totalUnits: number
+  orderCount: number
+  percentage: number
+}
+
+export interface DateTrendSummary {
+  startDate: string
+  endDate: string
+  totalDays: number
+  activeSalesDays: number
+  peakDate: string
+  peakDateSales: number
+  dailyAverageSales: number
+}
+
+export interface DatasetAnalysisContext {
+  overview: {
+    totalSales: number
+    totalOrders: number
+    totalUnits: number
+    averageOrderValue: number
+    averageUnitPrice: number
+  }
+  dateTrend: DateTrendSummary
+  dimensions: {
+    byRegion: DimensionRanking[]
+    byCategory: DimensionRanking[]
+    byProduct: DimensionRanking[]
+    bySalesRep: DimensionRanking[]
+    byCustomer: DimensionRanking[]
+  }
+  highlights: {
+    topRegion: DimensionRanking | null
+    topCategory: DimensionRanking | null
+    topProduct: DimensionRanking | null
+    topSalesRep: DimensionRanking | null
+    topCustomer: DimensionRanking | null
+    largestSingleOrder: {
+      orderId?: string
+      customerName?: string
+      productName?: string
+      salesRep?: string
+      salesAmount: number
+      date?: string
+    } | null
+  }
+}
+
+

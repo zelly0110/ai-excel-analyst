@@ -89,11 +89,21 @@
 <script setup lang="ts">
 import { ref, nextTick } from 'vue'
 import { ChatDotSquare, Cpu, User, ChatLineRound } from '@element-plus/icons-vue'
-import type { QuickPrompt, ChatMessage } from '../types/excel'
+import type { QuickPrompt, ChatMessage, DatasetAnalysisContext, DynamicExcelRow } from '../types/excel'
+import { answerNaturalLanguageQuery } from '../utils/queryEngine'
 
-defineProps<{
-  quickPrompts: QuickPrompt[]
-}>()
+const props = withDefaults(
+  defineProps<{
+    analysisContext?: DatasetAnalysisContext | null
+    rawData?: DynamicExcelRow[]
+    quickPrompts?: QuickPrompt[]
+  }>(),
+  {
+    analysisContext: null,
+    rawData: () => [],
+    quickPrompts: () => []
+  }
+)
 
 const inputQuery = ref('')
 const isAiTyping = ref(false)
@@ -103,7 +113,7 @@ const messages = ref<ChatMessage[]>([
   {
     id: 'msg-init',
     sender: 'ai',
-    text: '您好！我已经完成了 Excel 数据的初步扫描。您可以直接向我提问，例如查看各地区销售额对比、寻找利润率异常订单或分析下季销售趋势。',
+    text: '您好！我已经完成了当前 Excel 表格的数据扫描与结构化提炼。您可以直接向我提问，例如：“哪个地区销售额最高？”、“谁卖得最好？”、“8月销售额多少？” 或 “最大的一笔订单是多少？”。',
     timestamp: '09:00'
   }
 ])
@@ -139,20 +149,10 @@ const handleSend = () => {
   isAiTyping.value = true
   scrollToBottom()
 
-  // Simulated AI response after 1 second
+  // Calculate real answer via Query Engine
   setTimeout(() => {
     isAiTyping.value = false
-    
-    let answerText = ''
-    if (query.includes('区域') || query.includes('销售额')) {
-      answerText = '【AI 计算结果】在当前 10 条数据中：华东区总销售额达 ¥471,500 (占比 31.8%) 排名第一；华中区单笔订金额最高 (¥310,000)；华北区订单频次居前。建议在华东区重点加大 SaaS 软件复购。'
-    } else if (query.includes('利润率') || query.includes('最高')) {
-      answerText = '【AI 计算结果】利润率最高的产品类别是「插件工具 (Smart Chart)」，平均毛利率高达 81.47%；SaaS 软件类次之 (67.8%)；数据中台平均毛利率为 55.1%。'
-    } else if (query.includes('退款') || query.includes('风险')) {
-      answerText = '【AI 风险预警】检测到西北区订单 (序号 6) 产生退款，涉及到销售代表刘洋。原因分析：该插件在某些环境存在初始化配置冲突，建议安排技术支持跟进补救。'
-    } else {
-      answerText = `【AI 数据解答】已根据表格透视分析您的提问「${query}」：基于当前 10 笔订单透视，整体增长动力强劲，整体毛利率稳定在 67.45%，现金流健康。`
-    }
+    const answerText = answerNaturalLanguageQuery(query, props.analysisContext, props.rawData)
 
     messages.value.push({
       id: `ai-${Date.now()}`,
@@ -161,7 +161,7 @@ const handleSend = () => {
       timestamp: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
     })
     scrollToBottom()
-  }, 1200)
+  }, 400)
 }
 </script>
 
@@ -297,6 +297,7 @@ const handleSend = () => {
   color: #0f172a;
   line-height: 1.6;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  white-space: pre-line;
 }
 
 .message-row.user .message-bubble {

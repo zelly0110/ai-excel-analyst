@@ -5,7 +5,10 @@
         <el-icon color="#2563eb"><Cpu /></el-icon>
         <span>3. AI 智能洞察与分析报告</span>
       </div>
-      <el-tag type="primary" effect="dark" round>AI Agent 模型: DeepSeek-R1 (Mock)</el-tag>
+      <el-tag type="primary" effect="plain" round class="model-badge">
+        <el-icon class="badge-icon"><Cpu /></el-icon>
+        {{ modelTag || '规则分析 · 基于真实数据' }}
+      </el-tag>
     </div>
 
     <!-- Metric KPI Grid -->
@@ -63,7 +66,7 @@
             <div class="tags-group">
               <span v-for="tag in item.tags" :key="tag" class="insight-tag"># {{ tag }}</span>
             </div>
-            <span class="timestamp">AI 实时推演</span>
+            <span class="timestamp">统计引擎生成</span>
           </div>
         </div>
       </div>
@@ -75,10 +78,18 @@
 import { Cpu, Opportunity } from '@element-plus/icons-vue'
 import type { MetricCard, AiInsight } from '../types/excel'
 
-defineProps<{
-  metrics: MetricCard[]
-  insights: AiInsight[]
-}>()
+withDefaults(
+  defineProps<{
+    metrics: MetricCard[]
+    insights: AiInsight[]
+    modelTag?: string
+  }>(),
+  {
+    metrics: () => [],
+    insights: () => [],
+    modelTag: '规则分析 · 基于真实数据'
+  }
+)
 
 const getCategoryType = (category: string) => {
   switch (category) {
