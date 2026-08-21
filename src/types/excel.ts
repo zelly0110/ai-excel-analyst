@@ -48,6 +48,53 @@ export interface AiInsight {
   tags: string[]
 }
 
+export interface ProactiveInsight {
+  type: 'warning' | 'trend' | 'opportunity'
+  title: string
+  description: string
+  metric?: string
+  tags: string[]
+  meta?: {
+    category?: string
+    dimension?: 'date' | 'region' | 'product' | 'category' | 'salesRep' | 'overall'
+    severity?: 'high' | 'medium' | 'low'
+    benchmark?: number | string
+    actual?: number | string
+    diffPercent?: number
+    [key: string]: any
+  }
+}
+
+export interface BusinessReportMetric {
+  label: string
+  value: string
+  change?: string
+  trend?: 'up' | 'down' | 'neutral'
+  tip?: string
+}
+
+export interface BusinessReportItem {
+  id?: string
+  title: string
+  detail: string
+  tag?: string
+  metric?: string
+  severity?: 'high' | 'medium' | 'low'
+}
+
+export interface BusinessReport {
+  title: string
+  summary: string
+  generatedAt: string
+  dateRange: string
+  totalOrders: number
+  keyMetrics: BusinessReportMetric[]
+  highlights: BusinessReportItem[]
+  risks: BusinessReportItem[]
+  suggestions: BusinessReportItem[]
+  rawMeta?: Record<string, any>
+}
+
 export interface QuickPrompt {
   id: number
   icon: string

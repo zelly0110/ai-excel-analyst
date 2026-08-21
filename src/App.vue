@@ -56,6 +56,28 @@
             />
           </section>
 
+          <!-- Step 2.8: AI Proactive Insights Panel -->
+          <section class="section-block">
+            <ProactiveInsightPanel
+              :insights="proactiveInsights"
+              :analysis-context="analysisContext"
+              :raw-data="excelData"
+              :is-demo="isDemo"
+              :file-meta="fileMeta"
+              @generate-report="handleScrollToReport"
+            />
+          </section>
+
+          <!-- Step 2.9: AI Business Daily Report -->
+          <section v-if="businessReport" class="section-block">
+            <BusinessReportCard
+              :report="businessReport"
+              :context="analysisContext"
+              :is-demo="isDemo"
+              :file-meta="fileMeta"
+            />
+          </section>
+
           <!-- Step 3: AI Insights & Stat Cards -->
           <section class="section-block">
             <AiInsightCard :metrics="metrics" :insights="insights" />
@@ -76,13 +98,13 @@
 
     <!-- Footer -->
     <footer class="app-footer">
-      <p>AI Excel 数据分析助手 MVP v0.1 · Day 1 极简版本 · Built with Vue 3, TypeScript & Element Plus</p>
+      <p>AI Excel 数据分析助手 · Day 7 商业经营日报生成版本 · Built with Vue 3, TypeScript & Element Plus</p>
     </footer>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
 import { DataAnalysis, Check } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
@@ -90,6 +112,8 @@ import Header from './components/Header.vue'
 import ExcelUploader from './components/ExcelUploader.vue'
 import DataPreviewTable from './components/DataPreviewTable.vue'
 import SalesTrendChart from './components/SalesTrendChart.vue'
+import ProactiveInsightPanel from './components/ProactiveInsightPanel.vue'
+import BusinessReportCard from './components/BusinessReportCard.vue'
 import AiInsightCard from './components/AiInsightCard.vue'
 import ChatInput from './components/ChatInput.vue'
 
@@ -107,6 +131,9 @@ import {
   generateMetricCardsFromContext,
   generateInsightsFromContext
 } from './utils/dataAnalyzer'
+import { generateProactiveInsights } from './utils/insightEngine'
+import { generateBusinessReport } from './utils/reportGenerator'
+import { saveExcelData, loadExcelData, clearExcelData } from './utils/storage'
 
 const isDataLoaded = ref(false)
 const isLoading = ref(false)
@@ -125,7 +152,43 @@ const analysisContext = computed(() => buildDatasetAnalysisContext(excelData.val
 const metrics = computed(() => generateMetricCardsFromContext(analysisContext.value))
 const insights = computed(() => generateInsightsFromContext(analysisContext.value))
 
+// Dynamically compute proactive anomaly & opportunity insights
+const proactiveInsights = computed(() => {
+  return generateProactiveInsights(analysisContext.value, excelData.value)
+})
+
+// Dynamically compute comprehensive Business Daily Report
+const businessReport = computed(() => {
+  if (!isDataLoaded.value || excelData.value.length === 0) return null
+  return generateBusinessReport(analysisContext.value, proactiveInsights.value, metrics.value)
+})
+
+const handleScrollToReport = () => {
+  ElMessage.success('已自动生成最新「AI 商业经营决策日报」！')
+  nextTick(() => {
+    const el = document.getElementById('business-report-section')
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  })
+}
+
 const quickPrompts = ref<QuickPrompt[]>([])
+
+// On application mount, restore persisted Excel dataset if available
+onMounted(() => {
+  const cached = loadExcelData()
+  if (cached && cached.data && cached.data.length > 0) {
+    isDemo.value = cached.isDemo
+    excelData.value = cached.data
+    parsedColumns.value = cached.columns && cached.columns.length > 0
+      ? cached.columns
+      : Object.keys(cached.data[0] || {})
+    fileMeta.value = cached.meta
+    quickPrompts.value = MOCK_QUICK_PROMPTS
+    isDataLoaded.value = true
+  }
+})
 
 const handleLoadDemo = () => {
   isLoading.value = true
@@ -143,6 +206,10 @@ const handleLoadDemo = () => {
     
     isDataLoaded.value = true
     isLoading.value = false
+
+    // Persist demo dataset to localStorage
+    saveExcelData(excelData.value, parsedColumns.value, fileMeta.value, true)
+
     ElMessage.success('成功载入示例 Excel 销售数据！统计引擎已完成全自动聚合分析。')
   }, 400)
 }
@@ -154,6 +221,10 @@ const handleReset = () => {
   parsedColumns.value = []
   fileMeta.value = null
   quickPrompts.value = []
+
+  // Clear persisted data from localStorage
+  clearExcelData()
+
   ElMessage.info('数据已重置')
 }
 
@@ -173,8 +244,11 @@ const handleFileSelected = async (file: File) => {
     }
 
     quickPrompts.value = MOCK_QUICK_PROMPTS
-
     isDataLoaded.value = true
+
+    // Persist uploaded dataset to localStorage
+    saveExcelData(excelData.value, parsedColumns.value, fileMeta.value, false)
+
     ElMessage.success(`成功解析「${file.name}」(${result.sheetName})，读取到 ${result.rowCount} 行数据并生成分析报告！`)
   } catch (error: any) {
     ElMessage.error(`Excel 文件解析失败: ${error?.message || '未知错误'}`)
